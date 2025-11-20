@@ -1,4 +1,4 @@
-'use client'  // <- Add this at the very top
+'use client'  
 
 import React, { useState } from 'react'
 import Link from 'next/link'
@@ -9,13 +9,13 @@ const Navbar = () => {
 
   return (
     <nav className='bg-purple-700 text-white px-4 py-3 flex justify-between items-center'>
-      {/* Logo with Icon */}
+      
       <div className='flex items-center gap-2'>
         <div className='bg-white text-purple-700 font-bold px-2 py-1 rounded'>B</div>
         <Link href="/" className='font-bold text-2xl'>BitLinks</Link>
       </div>
 
-      {/* Desktop Menu */}
+      
       <ul className='hidden md:flex gap-4 items-center'>
         <Link href="/"><li className='hover:text-gray-300'>Home</li></Link>
         <Link href="/about"><li className='hover:text-gray-300'>About</li></Link>
@@ -31,12 +31,12 @@ const Navbar = () => {
         </li>
       </ul>
 
-      {/* Mobile Menu Button */}
+      
       <div className='md:hidden' onClick={() => setIsOpen(!isOpen)}>
         {isOpen ? <HiX size={28} /> : <HiMenu size={28} />}
       </div>
 
-      {/* Mobile Menu */}
+      
       {isOpen && (
         <ul className='absolute top-16 left-0 w-full bg-purple-700 flex flex-col gap-3 p-4 md:hidden z-10'>
           <Link href="/"><li className='hover:text-gray-300' onClick={() => setIsOpen(false)}>Home</li></Link>
