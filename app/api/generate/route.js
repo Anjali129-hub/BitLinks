@@ -14,15 +14,16 @@ export async function POST(request) {
       );
     }
 
+    // Connect to MongoDB
     const client = await clientPromise;
-    const db = client.db("bitlinks");
+    const db = client.db("bitlinks"); // database name
     const collection = db.collection("url");
 
     // Check if short URL already exists
     const existing = await collection.findOne({ shorturl: body.shorturl });
     if (existing) {
       return NextResponse.json(
-        { success: false, error: true, message: "URL already exists!" },
+        { success: false, error: true, message: "Short URL already exists!" },
         { status: 400 }
       );
     }
