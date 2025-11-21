@@ -1,22 +1,25 @@
-import { redirect } from "next/navigation"
-import clientPromise from "@/lib/mongodb"
+import pool from "@/lib/db";
+import { redirect } from "next/navigation";
 
+export default async function ShortURLPage({ params }) {
+  // await params if it's a promise
+  const { shorturl } = await params; // ✅ unwrap promise
 
-export default async function Page({ params }) {
-    const shorturl = (await params).shorturl
+  // Fetch link from Postgres
+  const result = await pool.query("SELECT * FROM links WHERE code=$1", [shorturl]);
 
-    const client = await clientPromise;
-    const db = client.db("bitlinks")
-    const collection = db.collection("url")
-
-    const doc = await collection.findOne({shorturl: shorturl})
-    console.log(doc)
-    if(doc){
-         redirect(doc.url)
-    }
-    else{
-        redirect(`${process.env.NEXT_PUBLIC_HOST}`)
-    }
-
-    return <div>My Post: {url}</div>
+  if (result.rows.length === 0) {
+    redirect(process.env.NEXT_PUBLIC_HOST); // fallback
   }
+
+  const link = result.rows[0];
+
+  // Increment clicks
+  await pool.query(
+    "UPDATE links SET clicks = clicks + 1, last_clicked = NOW() WHERE code=$1",
+    [shorturl]
+  );
+
+  // Redirect to target URL
+  redirect(link.url);
+}

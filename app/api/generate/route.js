@@ -1,49 +1,32 @@
-// app/api/generate/route.js
 import { NextResponse } from "next/server";
-import clientPromise from "@/lib/mongodb";
+import pool from "@/lib/db";
+import { nanoid } from "nanoid";
 
-export async function POST(request) {
-  try {
-    const body = await request.json();
+export async function POST(req) {
+  const { url, shorturl } = await req.json();
+  const code = shorturl || nanoid(6);
 
-    // Validate input
-    if (!body.url || !body.shorturl) {
-      return NextResponse.json(
-        { success: false, error: true, message: "URL and shorturl are required" },
-        { status: 400 }
-      );
-    }
-
-    // Connect to MongoDB
-    const client = await clientPromise;
-    const db = client.db("bitlinks"); // database name
-    const collection = db.collection("url");
-
-    // Check if short URL already exists
-    const existing = await collection.findOne({ shorturl: body.shorturl });
-    if (existing) {
-      return NextResponse.json(
-        { success: false, error: true, message: "Short URL already exists!" },
-        { status: 400 }
-      );
-    }
-
-    // Insert new URL
-    await collection.insertOne({
-      url: body.url,
-      shorturl: body.shorturl,
-      createdAt: new Date(),
-    });
-
-    return NextResponse.json(
-      { success: true, error: false, message: "URL Generated Successfully" },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("Error in /api/generate:", error);
-    return NextResponse.json(
-      { success: false, error: true, message: "Server error" },
-      { status: 500 }
-    );
+  const existing = await pool.query("SELECT * FROM links WHERE code=$1", [code]);
+  if (existing.rows.length > 0) {
+    return NextResponse.json({ error: "Code exists" }, { status: 409 });
   }
+
+  await pool.query(
+    "INSERT INTO links (code, url, clicks) VALUES ($1, $2, 0)",
+    [code, url]
+  );
+
+  return NextResponse.json({ code }, { status: 201 });
+}
+
+export async function GET() {
+  const result = await pool.query("SELECT * FROM links ORDER BY created_at DESC");
+  return NextResponse.json(result.rows);
+}
+
+export async function DELETE(req, { params }) {
+  const { shorturl } = params;
+  const result = await pool.query("DELETE FROM links WHERE code=$1", [shorturl]);
+  if (result.rowCount === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ ok: true });
 }
